@@ -1,0 +1,22 @@
+{
+    "name": "mssql-src",
+    "config": {
+        "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
+        "connection.url": "jdbc:sqlserver://mssql:1433;databaseName=test;",
+        "connection.user": "sa",
+        "connection.password": "pdw123!@#",
+        "mode": "timestamp+incrementing",
+        "incrementing.column.name": "id",
+        "timestamp.column.name": "ts",
+        "table.whitelist": "location,department,employee",
+        "topic.prefix": "mssql-src-",
+        "transforms": "copyFieldToKey,extractKeyFromStruct",
+        "transforms.copyFieldToKey.type": "org.apache.kafka.connect.transforms.ValueToKey",
+        "transforms.copyFieldToKey.fields": "id",
+        "transforms.extractKeyFromStruct.type": "org.apache.kafka.connect.transforms.ExtractField$Key",
+        "transforms.extractKeyFromStruct.field": "id",
+        "key.converter": "org.apache.kafka.connect.converters.IntegerConverter",
+        "value.converter": "io.confluent.connect.avro.AvroConverter",
+        "value.converter.schema.registry.url": "http://schema-registry:8081"
+    }
+}

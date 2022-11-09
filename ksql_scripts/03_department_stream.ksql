@@ -1,0 +1,77 @@
+SET 'auto.offset.reset'='earliest';
+
+CREATE OR REPLACE STREAM DEPARTMENT_STREAM (
+    id INTEGER KEY,
+    ts TIMESTAMP,
+    name VARCHAR,
+    loc_id INTEGER
+)
+WITH (
+    KAFKA_TOPIC='mssql-src-department',
+    VALUE_FORMAT='AVRO',
+    PARTITIONS=1
+);
+
+CREATE OR REPLACE STREAM EMPLOYEE_DEPARTMENT_INDEX_STREAM (
+    id INTEGER KEY,
+    ts TIMESTAMP,
+    name VARCHAR,
+    dep_id INTEGER
+)
+WITH (
+    KAFKA_TOPIC='mssql-src-employee',
+    VALUE_FORMAT='AVRO',
+    PARTITIONS=1
+);
+
+CREATE OR REPLACE TABLE EMPLOYEE_DEPARTMENT_INDEX_TABLE
+AS
+SELECT
+    dep_id,
+    COLLECT_SET(id) AS emp_ids
+FROM EMPLOYEE_DEPARTMENT_INDEX_STREAM
+GROUP BY
+    dep_id
+EMIT CHANGES;
+
+CREATE OR REPLACE STREAM EXPLODE_EMPLOYEE_BY_DEPARTMENT
+AS
+SELECT
+    EXPLODE(eix.emp_ids) AS emp_id,
+    dep.id AS dep_id,
+    dep.name AS dep_name,
+    dep.loc_id AS loc_id,
+    dep.ts AS ts
+FROM DEPARTMENT_STREAM AS dep
+JOIN EMPLOYEE_DEPARTMENT_INDEX_TABLE AS eix ON eix.dep_id = dep.id
+EMIT CHANGES;
+
+CREATE OR REPLACE STREAM EXPLODE_EMPLOYEE_BY_DEPARTMENT_REKEY
+AS
+SELECT
+    emp_id,
+    dep_id,
+    dep_name,
+    loc_id,
+    ts
+FROM EXPLODE_EMPLOYEE_BY_DEPARTMENT
+PARTITION BY
+    emp_id
+EMIT CHANGES;
+
+CREATE OR REPLACE STREAM CHANGES_BY_DEPARTMENT
+AS
+SELECT
+    emp.id AS emp_id,
+    emp.name AS emp_name,
+    dep.dep_id AS dep_id,
+    dep.dep_name AS dep_name,
+    loc.id AS loc_id,
+    loc.name AS loc_name,
+    dep.ts AS ts
+FROM EXPLODE_EMPLOYEE_BY_DEPARTMENT_REKEY AS dep
+LEFT OUTER JOIN EMPLOYEE_TABLE AS emp ON emp.id = dep.emp_id
+LEFT OUTER JOIN LOCATION_TABLE AS loc ON loc.id = dep.loc_id
+PARTITION BY
+    emp.id
+EMIT CHANGES;

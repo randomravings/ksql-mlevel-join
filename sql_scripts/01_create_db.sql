@@ -1,0 +1,10 @@
+USE [master];
+GO
+DROP DATABASE IF EXISTS [test];
+GO
+CREATE DATABASE [test];
+GO
+USE [test]
+GO
+CREATE SCHEMA [history]
+GO

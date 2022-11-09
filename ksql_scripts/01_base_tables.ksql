@@ -1,0 +1,36 @@
+SET 'auto.offset.reset'='earliest';
+
+CREATE OR REPLACE TABLE LOCATION_TABLE (
+    id INTEGER PRIMARY KEY,
+    ts TIMESTAMP,
+    name VARCHAR
+)
+WITH (
+    KAFKA_TOPIC='mssql-src-location',
+    VALUE_FORMAT='AVRO',
+    PARTITIONS=1
+);
+
+CREATE OR REPLACE TABLE DEPARTMENT_TABLE (
+    id INTEGER PRIMARY KEY,
+    ts TIMESTAMP,
+    name VARCHAR,
+    loc_id INTEGER
+)
+WITH (
+    KAFKA_TOPIC='mssql-src-department',
+    VALUE_FORMAT='AVRO',
+    PARTITIONS=1
+);
+
+CREATE OR REPLACE TABLE EMPLOYEE_TABLE (
+    id INTEGER PRIMARY KEY,
+    ts TIMESTAMP,
+    name VARCHAR,
+    dep_id INTEGER
+)
+WITH (
+    KAFKA_TOPIC='mssql-src-employee',
+    VALUE_FORMAT='AVRO',
+    PARTITIONS=1
+);

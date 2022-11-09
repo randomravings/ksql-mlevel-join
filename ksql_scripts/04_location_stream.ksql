@@ -1,0 +1,99 @@
+SET 'auto.offset.reset'='earliest';
+
+CREATE OR REPLACE STREAM LOCATION_STREAM (
+    id INTEGER KEY,
+    ts TIMESTAMP,
+    name VARCHAR
+)
+WITH (
+    KAFKA_TOPIC='mssql-src-location',
+    VALUE_FORMAT='AVRO',
+    PARTITIONS=1
+);
+
+CREATE OR REPLACE STREAM DEPARTMENT_LOCATION_INDEX_STREAM (
+    id INTEGER KEY,
+    ts TIMESTAMP,
+    name VARCHAR,
+    loc_id INTEGER
+)
+WITH (
+    KAFKA_TOPIC='mssql-src-department',
+    VALUE_FORMAT='AVRO',
+    PARTITIONS=1
+);
+
+CREATE OR REPLACE TABLE DEPARTMENT_LOCATION_INDEX_TABLE
+AS
+SELECT
+    loc_id,
+    COLLECT_SET(id) AS dep_ids
+FROM DEPARTMENT_STREAM
+GROUP BY
+    loc_id
+EMIT CHANGES;
+
+CREATE OR REPLACE STREAM EXPLODE_DEPARTMENT_BY_LOCATION
+AS
+SELECT
+    EXPLODE(dix.dep_ids) AS dep_id,
+    loc.id AS loc_id,
+    loc.name AS loc_name,
+    loc.ts AS ts
+FROM LOCATION_STREAM AS loc
+JOIN DEPARTMENT_LOCATION_INDEX_TABLE AS dix ON dix.loc_id = loc.id
+EMIT CHANGES;
+
+CREATE OR REPLACE STREAM EXPLODE_DEPARTMENT_BY_LOCATION_REKEY
+AS
+SELECT
+    dep_id,
+    loc_id,
+    loc_name,
+    ts
+FROM EXPLODE_DEPARTMENT_BY_LOCATION
+PARTITION BY
+    dep_id
+EMIT CHANGES;
+
+CREATE OR REPLACE STREAM EXPLODE_EMPLOYEE_BY_LOCATION
+AS
+SELECT
+    EXPLODE(eix.emp_ids) AS emp_id,
+    loc.dep_id AS dep_id,
+    loc.loc_id AS loc_id,
+    loc.loc_name AS loc_name,
+    loc.ts AS ts
+FROM EXPLODE_DEPARTMENT_BY_LOCATION_REKEY AS loc
+JOIN EMPLOYEE_DEPARTMENT_INDEX_TABLE AS eix ON eix.dep_id = loc.dep_id
+EMIT CHANGES;
+
+CREATE OR REPLACE STREAM EXPLODE_EMPLOYEE_BY_LOCATION_REKEY
+AS
+SELECT
+    emp_id,
+    dep_id,
+    loc_id,
+    loc_name,
+    ts
+FROM EXPLODE_EMPLOYEE_BY_LOCATION
+PARTITION BY
+    emp_id
+EMIT CHANGES;
+
+CREATE OR REPLACE STREAM CHANGES_BY_LOCATION
+AS
+SELECT
+    emp.id AS emp_id,
+    emp.name AS emp_name,
+    dep.id AS dep_id,
+    dep.name AS dep_name,
+    loc.loc_id AS loc_id,
+    loc.loc_name AS loc_name,
+    loc.ts AS ts
+FROM EXPLODE_EMPLOYEE_BY_LOCATION_REKEY AS loc
+LEFT OUTER JOIN DEPARTMENT_TABLE AS dep ON dep.id = loc.dep_id
+LEFT OUTER JOIN EMPLOYEE_TABLE AS emp ON emp.id = loc.emp_id
+PARTITION BY
+    emp.id
+EMIT CHANGES;
