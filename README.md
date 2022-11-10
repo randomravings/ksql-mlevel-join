@@ -194,4 +194,4 @@ $ dotnet build client/TestClient
 $ dotnet build --project client/TestClient/TestClient.csproj
 ```
 
-> Note that while the example only resets one stream (employee), a real world example will need to consider all streams, but that depends on use case.
+> Note that this example does not handle deletes, but this does not alter the approach, other than a 'delete' marked key has to be able to be propogated through the pipe as part of the overall CDC solution.
