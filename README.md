@@ -2,6 +2,8 @@
 
 The example shows how to join three streams together using KSQL using foreign key relations. While foreign key is not a concept in KSQL in is a useful way of thinking about it as the three streams are sourced from a relational database where they are modelled as such.
 
+> **Disclaimer**: This code is provided as-is and should be tested and likely tweaked before used in production environments.
+
 The tables in question are modelled as follows and each have a corresponding cdc stream:
 
 ```
