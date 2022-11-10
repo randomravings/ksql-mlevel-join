@@ -1,4 +1,4 @@
-﻿using Avro.Generic;
+using Avro.Generic;
 using Confluent.Kafka;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
