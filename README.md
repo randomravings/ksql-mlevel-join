@@ -8,7 +8,7 @@ The tables in question are modelled as follows and each have a corresponding cdc
 
 ```
 +-----------------+          +-----------------+          +-----------------+
-| location        |          | department      |          | emplouee        |
+| location        |          | department      |          | employee        |
 +-----------------+          +-----------------+          +-----------------+
 | id int          |<----+    | id int          |<----+    | id int          |
 | ts datetime     |     |    | ts datetime     |     |    | ts datetime     |
@@ -115,7 +115,6 @@ The three streams delivering output:
                                     +-----------------+        |                 |
                                     | department tab  |--join--+                 |
                                     +-----------------+                          |
-                                                                                 |
                                                                                  |
                                                       +-----------------+        |
                                                       | location tab    |--join--+
