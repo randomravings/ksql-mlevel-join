@@ -190,7 +190,7 @@ There is a code example for .Net and it can be tested out by building and runnin
 ```
 $ dotnet build client/TestClient
 
-$ dotnet build --project client/TestClient/TestClient.csproj
+$ dotnet run --project client/TestClient/TestClient.csproj
 ```
 
 > Note that this example does not handle deletes, but this does not alter the approach, other than a 'delete' marked key has to be able to be propogated through the pipe as part of the overall CDC solution.
